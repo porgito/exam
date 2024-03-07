@@ -22,11 +22,11 @@ int main(int ac, char **av)
 {
     if (ac != 2)
         putstr("Wrong number of arguments\n", 2);
-    int id = 0, db[clients];
-    fd_set new_fd, old_fd, wr;
-    char buffer[SIZE], buffer2[SIZE];
+    int db[clients], id = 0, fd_size;
     struct sockaddr_in servaddr;
-    
+    fd_set old_fd, wr, new_fd;
+    char buffer[SIZE], buffer2[SIZE];
+
     serverfd = socket(AF_INET, SOCK_STREAM, 0);
     if (serverfd < 0)
         putstr("Fatal error\n", 2);
@@ -37,9 +37,9 @@ int main(int ac, char **av)
         putstr("Fatal error\n", 2);
     if (listen(serverfd, 100))
         putstr("Fatal error\n", 2);
-    int fd_size = serverfd;
-    FD_ZERO(&new_fd);
+    fd_size = serverfd;
     FD_ZERO(&old_fd);
+    FD_ZERO(&new_fd);
     FD_SET(serverfd, &new_fd);
     while (1)
     {
@@ -57,15 +57,15 @@ int main(int ac, char **av)
                     struct sockaddr_in claddr;
                     socklen_t len = sizeof(claddr);
 
-                    int clt = accept(serverfd, (struct sockaddr*)&claddr, &len);
+                    int clt = accept(serverfd, (struct sockaddr *)&claddr, &len);
                     if (clt < 0)
                         continue;
                     fd_size = (clt > fd_size) ? clt : fd_size;
                     sprintf(buffer, "server: client %d just arrived\n", id);
                     db[clt] = id++;
-                    for(int j = 2; j <= fd_size; j++)
-                        if (FD_ISSET(j, &wr) && j != serverfd)
-                            if (send(j, buffer, strlen(buffer), 0) < 0)
+                    for(int i = 2; i <= fd_size; i++)
+                        if (FD_ISSET(i, &wr) && i != serverfd)
+                            if (send(i, buffer, strlen(buffer), 0) < 0)
                                 putstr("Fatal error\n", 2);
                     FD_SET(clt, &new_fd);
                 }
@@ -79,17 +79,17 @@ int main(int ac, char **av)
                         sprintf(buffer, "server: client %d just left\n", db[fd]);
                         FD_CLR(fd, &new_fd);
                         close(fd);
-                        for(int z = 2; z <= fd_size; z++)
-                            if (FD_ISSET(z, &wr) && z != fd)
-                                if (send(z, buffer, strlen(buffer), 0) < 0)
+                        for(int i = 2; i <= fd_size; i++)
+                            if (FD_ISSET(i, &wr) && i != fd)
+                                if (send(i, buffer, strlen(buffer), 0) < 0)
                                     putstr("Fatal error\n", 2);
                     }
                     else
                     {
                         sprintf(buffer, "client %d: %s", db[fd], buffer2);
-                        for (int z = 2; z <= fd_size; z++)
-                            if (FD_ISSET(z, &wr) && z != serverfd)
-                                if (send(z, buffer, strlen(buffer), 0) < 0)
+                        for(int i = 2; i <= fd_size; i++)
+                            if (FD_ISSET(i, &wr) && i != serverfd)
+                                if (send(i, buffer, strlen(buffer), 0) < 0)
                                     putstr("Fatal error\n", 2);
                     }
                 }
