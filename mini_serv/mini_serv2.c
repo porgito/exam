@@ -84,7 +84,9 @@ int main(int ac, char **av)
                 }
                 else
                 {
-                    int ret = recv(fd, buffer2, sizeof(buffer2), 0);
+                    int ret = 1;
+                    while (ret == 1 && buffer2[strlen(buffer2) - 1] != '\n')
+                        ret = recv(fd, buffer2 + strlen(buffer2), 1, 0);
                     if (ret <= 0)
                     {
                         sprintf(buffer, "server: client %d just left\n", clients[fd].id);
@@ -93,24 +95,13 @@ int main(int ac, char **av)
                         close(fd);
                     }
                     else
-                    {
-                        for(int i = 0, j = strlen(clients[fd].msg); i < ret; i++, j++)
-                        {
-                            clients[fd].msg[j] = buffer2[i];
-                            if (clients[fd].msg[j] == '\n')
-                            {
-                                clients[fd].msg[j] = '\0';
-                                sprintf(buffer, "client %d: %s\n", clients[fd].id, clients[fd].msg);
-                                sendall(fd);
-                                bzero(clients[fd].msg, strlen(clients[fd].msg));
-                                j = -1;
-                            }
-                        }
-                        bzero(clients[fd].msg, strlen(clients[fd].msg));
-                        break;
+                    {   
+                        sprintf(buffer, "client %d: %s", clients[fd].id, buffer2);
+                        sendall(serverfd);
                     }
                 }
             }
+            FD_CLR(fd, &read_set);
         }
     }
 }
